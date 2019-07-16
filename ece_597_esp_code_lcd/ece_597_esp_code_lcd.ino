@@ -6,6 +6,10 @@
 
 
 #include <Arduino.h>
+
+#include <ros.h>
+#include <geometry_msgs/Twist.h>
+
 #include <U8g2lib.h>
 #include "BluetoothSerial.h"
 
@@ -78,12 +82,19 @@ boolean manual_control = false;
 void parse_BT();
 void parse_buttons();
 void u8g2_setup();
+void ros_setup();
+
+void ros_routine();
+void auto_control();
 
 float right_control = 0.0;
 float left_control = 0.0;
 
 int mode_change_count = 0;
 
+ros::NodeHandle esp32control;
+void auto_control(const geometry_msgs::Twist &jetson_input);
+ros::Subscriber<geometry_msgs::Twist> control_sub("esp_control", &auto_control);
 
 
 
@@ -95,6 +106,7 @@ void setup() {
   
   u8g2_setup();
   pwm_setup();
+  ros_setup();
 }
 
 char charBuffer[128];
@@ -116,11 +128,11 @@ void loop() {
     u8g2.drawStr(0,0, "Mode: MANUAL");
   }
   else{
-    //code here
-    
     if(mode_change_count > 10)
     {
       u8g2.drawStr(0,0, "Mode: Auto");
+      manual_control = false;
+      esp32control.spinOnce();
     }
     else
     {
@@ -138,6 +150,18 @@ void u8g2_setup(){
   u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
   u8g2.setFontDirection(0);
+}
+
+void ros_setup(){
+  esp32control.initNode();
+  esp32control.subscribe(control_sub);
+}
+
+void auto_control(const geometry_msgs::Twist &jetson_input){
+  Xaxis = jetson_input.linear.x;
+  Yaxis = jetson_input.angular.z;
+  
+  wheel_control(Xaxis, Yaxis, false, false);
 }
 
 void u8g2_printData(){
