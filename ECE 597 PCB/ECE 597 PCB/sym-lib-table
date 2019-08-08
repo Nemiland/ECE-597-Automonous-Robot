@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name ECE-597-PCB-rescue)(type Legacy)(uri "${KIPRJMOD}/ECE 597 PCB-rescue.lib")(options "")(descr ""))
+)
